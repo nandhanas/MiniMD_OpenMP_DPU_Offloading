@@ -1,0 +1,2 @@
+-np 2 -npernode 1 -H thor004,thor005 /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_intel -n 50
+-np 2 -npernode 1 -H thor-bf04,thor-bf05 /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_arm -n 50

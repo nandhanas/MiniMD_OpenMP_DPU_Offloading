@@ -4,16 +4,17 @@ SHELL = /bin/sh
 
 # Files
 
-SRC =	ljs.cpp input.cpp integrate.cpp atom.cpp force_lj.cpp force_eam.cpp neighbor.cpp \
+SRC =	bf_comm.cpp ljs.cpp input.cpp integrate.cpp atom.cpp force_lj.cpp force_eam.cpp neighbor.cpp \
 	thermo.cpp comm.cpp timer.cpp output.cpp setup.cpp
-INC =	ljs.h atom.h force.h neighbor.h thermo.h timer.h comm.h integrate.h threadData.h variant.h openmp.h \
+INC =	bf_comm.h ljs.h atom.h force.h neighbor.h thermo.h timer.h comm.h integrate.h threadData.h variant.h openmp.h \
 	force_lj.h force_eam.h types.h
 
 # Definitions
 
 ROOT =	miniMD
-EXE =	$(ROOT)_$@
+EXE =	$(ROOT)_$@_$(arch)
 OBJ =	$(SRC:.cpp=.o)
+OBJDIR = Obj_$@_$(arch)
 
 # Help
 
@@ -43,10 +44,10 @@ help:
 # Targets
 
 openmpi:
-	@if [ ! -d Obj_$@ ]; then mkdir Obj_$@; fi
-	@cp -p $(SRC) $(INC) Obj_$@
-	@cp Makefile.$@ Obj_$@/Makefile
-	@cd Obj_$@; \
+	@if [ ! -d $(OBJDIR) ]; then mkdir $(OBJDIR); fi
+	@cp -p $(SRC) $(INC) $(OBJDIR)
+	@cp Makefile.$@ $(OBJDIR)/Makefile
+	@cd $(OBJDIR); \
 	$(MAKE)  "OBJ = $(OBJ)" "INC = $(INC)" "EXE = ../$(EXE)" ../$(EXE)
 #	@if [ -d Obj_$@ ]; then cd Obj_$@; rm $(SRC) $(INC) Makefile*; fi
 
@@ -99,3 +100,4 @@ path=""
 
 test:
 	bash run_tests ${scope} ${input} ${halfneigh} ${path}   
+
