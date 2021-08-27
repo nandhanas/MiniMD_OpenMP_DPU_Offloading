@@ -83,30 +83,30 @@ void Thermo::compute(MMD_int iflag, Atom &atom, Neighbor &neighbor, Force* force
   t_act = 0;
   e_act = 0;
   p_act = 0;
+  
   #pragma omp barrier
   t = temperature(atom);
+  
   #pragma omp master
   {
     eng = energy(atom, neighbor, force);
-
+    
     p = pressure(t, force);
-
     MMD_int istep = iflag;
-
     if(iflag == -1) istep = ntimes;
 
     if(iflag == 0) mstat = 0;
-
+    
     steparr[mstat] = istep;
     tmparr[mstat] = t;
     engarr[mstat] = eng;
     prsarr[mstat] = p;
-
+    
     mstat++;
 
     double oldtime = timer.array[TIME_TOTAL];
     timer.barrier_stop(TIME_TOTAL);
-
+    
     if(threads->mpi_me == 0) {
       fprintf(stdout, "%i %e %e %e %6.3lf\n", istep, t, eng, p, istep == 0 ? 0.0 : timer.array[TIME_TOTAL]);
     }

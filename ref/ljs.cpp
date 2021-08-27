@@ -416,12 +416,11 @@ int main(int argc, char** argv)
     force->setup();
 
     if(in.forcetype == FORCEEAM) atom.mass = force->mass;
-    if(isHost){
-      create_atoms(atom, in.nx, in.ny, in.nz, in.rho);
-      thermo.setup(in.rho, integrate, atom, in.units);
-
-      create_velocity(in.t_request, atom, thermo);
-    }
+    
+    if(isHost) create_atoms(atom, in.nx, in.ny, in.nz, in.rho);
+    thermo.setup(in.rho, integrate, atom, in.units);
+    if(isHost) create_velocity(in.t_request, atom, thermo);
+    
   }
 
   if(isHost && me == 0)
@@ -523,14 +522,26 @@ int main(int argc, char** argv)
       MPI_Win_detach(win_neighbors, neighbor.neighbors);
       MPI_Win_detach(win_x, atom.x);
       MPI_Win_detach(win_type, atom.type);
+      MPI_Win_detach(win_f, atom.f);
+      MPI_Win_detach(win_sorted_index, atom.sorted_index);
+
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    
     MPI_Win_free(&win_numneigh);
     MPI_Win_free(&win_neighbors);
     MPI_Win_free(&win_x);
     MPI_Win_free(&win_type);
+    MPI_Win_free(&win_f);
+    MPI_Win_free(&win_sorted_index);
   #endif
   MPI_Finalize();
   return 0;
 }
 
+ 
+
+        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_x);
+        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_v);
+        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_f);
+        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_type);
+        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_sorted_index);

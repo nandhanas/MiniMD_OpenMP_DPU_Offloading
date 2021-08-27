@@ -365,6 +365,7 @@ void Comm::reverse_communicate(Atom &atom)
 
 void Comm::exchange(Atom &atom)
 {
+  
   if(do_safeexchange)
     return exchange_all(atom);
 
@@ -373,12 +374,12 @@ void Comm::exchange(Atom &atom)
   MMD_float* x;
 
   /* enforce PBC */
-
+  
   atom.pbc();
-
+  
   /* loop over dimensions */
   int tid = omp_get_thread_num();
-
+  
   for(idim = 0; idim < 3; idim++) {
 
     /* only exchange if more than one proc in this dimension */
@@ -452,7 +453,7 @@ void Comm::exchange(Atom &atom)
     }
 
     nsend_thread[tid] = nsend;
-
+    
     #pragma omp barrier
 
     #pragma omp master
@@ -478,7 +479,7 @@ void Comm::exchange(Atom &atom)
 
     nholes_thread[tid] = nholes;
     #pragma omp barrier
-
+    
     #pragma omp master
     {
       int total_nholes = 0;
@@ -499,7 +500,7 @@ void Comm::exchange(Atom &atom)
       if(send_flag[j]) holes++;
     }
 
-
+    
     for(int k = 0; k < nsend; k++) {
       atom.pack_exchange(exc_sendlist_thread[tid][k], &buf_send[(k + nsend_thread[tid] - nsend) * 7]);
 
@@ -509,7 +510,7 @@ void Comm::exchange(Atom &atom)
         atom.copy(j++, exc_sendlist_thread[tid][k]);
       }
     }
-
+    
     nsend *= 7;
     #pragma omp barrier
     #pragma omp master
@@ -551,6 +552,7 @@ void Comm::exchange(Atom &atom)
         nrecv_thread[i] = 0;
 
     }
+    
     /* check incoming atoms to see if they are in my box
        if they are, add to my list */
 
@@ -592,7 +594,7 @@ void Comm::exchange(Atom &atom)
       if(value >= lo && value < hi)
         atom.unpack_exchange(copyinpos++, &buf_recv[i * 7]);
     }
-
+   
     // #pragma omp barrier
 
   }
@@ -606,7 +608,7 @@ void Comm::exchange_all(Atom &atom)
 
   /* enforce PBC */
 
-  //atom.pbc();
+  atom.pbc();
 
   /* loop over dimensions */
   int iswap = 0;

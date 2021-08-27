@@ -521,7 +521,7 @@ void ForceEAM::read_file(const char* filename)
     }
   }
 
-  MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&flag, 1, MPI_INT, 0, hosts_communicator);
 
   if(flag) {
     MPI_Finalize();
@@ -540,12 +540,12 @@ void ForceEAM::read_file(const char* filename)
   }
 
   //printf("Read: %lf %i %lf %i %lf %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
-  MPI_Bcast(&file->mass, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&file->nrho, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&file->drho, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&file->nr, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&file->dr, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&file->cut, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&file->mass, 1, MPI_DOUBLE, 0, hosts_communicator);
+  MPI_Bcast(&file->nrho, 1, MPI_INT, 0, hosts_communicator);
+  MPI_Bcast(&file->drho, 1, MPI_DOUBLE, 0, hosts_communicator);
+  MPI_Bcast(&file->nr, 1, MPI_INT, 0, hosts_communicator);
+  MPI_Bcast(&file->dr, 1, MPI_DOUBLE, 0, hosts_communicator);
+  MPI_Bcast(&file->cut, 1, MPI_DOUBLE, 0, hosts_communicator);
   mass = file->mass;
   file->frho = new MMD_float[file->nrho + 1];
   file->rhor = new MMD_float[file->nr + 1];
@@ -554,23 +554,23 @@ void ForceEAM::read_file(const char* filename)
   if(me == 0) grab(fptr, file->nrho, file->frho);
 
   if(sizeof(MMD_float) == 4)
-    MPI_Bcast(file->frho, file->nrho, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->frho, file->nrho, MPI_FLOAT, 0, hosts_communicator);
   else
-    MPI_Bcast(file->frho, file->nrho, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->frho, file->nrho, MPI_DOUBLE, 0, hosts_communicator);
 
   if(me == 0) grab(fptr, file->nr, file->zr);
 
   if(sizeof(MMD_float) == 4)
-    MPI_Bcast(file->zr, file->nr, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->zr, file->nr, MPI_FLOAT, 0, hosts_communicator);
   else
-    MPI_Bcast(file->zr, file->nr, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->zr, file->nr, MPI_DOUBLE, 0, hosts_communicator);
 
   if(me == 0) grab(fptr, file->nr, file->rhor);
 
   if(sizeof(MMD_float) == 4)
-    MPI_Bcast(file->rhor, file->nr, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->rhor, file->nr, MPI_FLOAT, 0, hosts_communicator);
   else
-    MPI_Bcast(file->rhor, file->nr, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(file->rhor, file->nr, MPI_DOUBLE, 0, hosts_communicator);
 
   for(int i = file->nrho; i > 0; i--) file->frho[i] = file->frho[i - 1];
 
@@ -876,7 +876,7 @@ void ForceEAM::communicate(Atom &atom, Comm &comm)
       MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
       MPI_Sendrecv(comm.buf_send, comm.comm_send_size[iswap], MPI_FLOAT, comm.sendproc[iswap], 0,
                    comm.buf_recv, comm.comm_recv_size[iswap], MPI_FLOAT, comm.recvproc[iswap], 0,
-                   MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                   hosts_communicator, MPI_STATUS_IGNORE);
       buf = comm.buf_recv;
     } else buf = comm.buf_send;
 

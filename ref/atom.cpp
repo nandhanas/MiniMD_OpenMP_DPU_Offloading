@@ -78,10 +78,15 @@ void Atom::growarray()
   #ifdef BF
     if(isHost){
           if(nmax > 0) {
+              #pragma omp master
+              {
+              
               MPI_Win_detach(win_x, x);
-              MPI_Win_detach(win_f, f);
               MPI_Win_detach(win_type, type);
-              MPI_Win_detach(win_sorted_index, sorted_index);
+              MPI_Win_detach(win_f, f);
+              
+              //MPI_Win_detach(win_sorted_index, sorted_index);
+              }
           }
     }
   #endif 
@@ -100,11 +105,14 @@ void Atom::growarray()
   }
   #ifdef BF
     if(isHost){
+        #pragma omp master
+        {
         
         MPI_Win_attach(win_x, x, sizeof(MMD_float)*nmax*PAD); 
-        MPI_Win_attach(win_f, f, sizeof(MMD_float)*nmax*PAD); 
         MPI_Win_attach(win_type, type, sizeof(int)*nmax);
-        MPI_Win_attach(win_sorted_index, type, sizeof(int)*nmax);
+        MPI_Win_attach(win_f, f, sizeof(MMD_float)*nmax*PAD); 
+        //MPI_Win_attach(win_sorted_index, type, sizeof(int)*nmax);
+        }
     }
   #endif 
 }
@@ -380,6 +388,16 @@ void Atom::destroy_1d_int_array(int* array)
 
 void Atom::sort(Neighbor &neighbor)
 {
+  #ifdef BF
+    if(isHost){
+        #pragma omp master
+        {
+        MPI_Win_detach(win_x, x);
+        MPI_Win_detach(win_type, type);
+        
+        }
+    }
+  #endif 
 
   neighbor.binatoms(*this,nlocal);
   #pragma omp barrier
@@ -448,12 +466,11 @@ void Atom::sort(Neighbor &neighbor)
 
   #ifdef BF
     if(isHost){
-        
-        MPI_Win_detach(win_x, x);
+        #pragma omp master
+        {
         MPI_Win_attach(win_x, x, sizeof(MMD_float)*nmax*PAD);
-        
-        MPI_Win_detach(win_type, type);
         MPI_Win_attach(win_type, type, sizeof(int)*nmax);
+        }
     }
   #endif 
 }

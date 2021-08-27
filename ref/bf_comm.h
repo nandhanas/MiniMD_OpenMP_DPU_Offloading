@@ -13,6 +13,4 @@ extern MPI_Win win_type;
 extern MPI_Win win_f;
 extern MPI_Win win_sorted_index;
 
-
-//extern MPI_Aint atom_addresses[2];
 #define BF

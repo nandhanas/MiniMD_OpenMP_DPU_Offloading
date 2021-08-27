@@ -62,7 +62,6 @@ void Integrate::initialIntegrate(int nb)
     }
     if(nb){
       MPI_Barrier(nic_host_communicator);
-      
     }
      
 }
@@ -92,6 +91,7 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
   dtforce = dtforce / mass;
   //Use OpenMP threads only within the following loop containing the main loop.
   //Do not use OpenMP for setup and postprocessing.
+  
   #pragma omp parallel private(i,n)
   {
     int next_sort = sort_every>0?sort_every:ntimes+1;
@@ -107,6 +107,7 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
         f = atom.f;
         xold = atom.xold;
         nlocal = atom.nlocal;
+        
         #ifdef BF
         if((n + 1) % neighbor.every) {
         #endif
@@ -116,15 +117,16 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
           initialIntegrate(1);  
         }
         #endif
+       
         #pragma omp master
         timer.stamp();
 
         if((n + 1) % neighbor.every) {
-            
+          
           comm.communicate(atom);
           #pragma omp master
           timer.stamp(TIME_COMM);
-
+          
         } else {
           
           //these routines are not yet ported to OpenMP
@@ -169,27 +171,37 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
               }
 
             }
+            
             #ifdef BF
               MPI_Barrier(nic_host_communicator);
             #endif
+            
             #pragma omp master
             timer.stamp_extra_start();
+            
             comm.exchange(atom);
+            
+            
             if(n+1>=next_sort) {
               atom.sort(neighbor);
+              
               #ifdef BF
               MPI_Aint sorted_index_address;
               MPI_Get_address(atom.sorted_index, &sorted_index_address); 
               MPI_Send(&sorted_index_address, 1, MPI_AINT, 1, 0, nic_host_communicator);
               #endif
+              
               next_sort +=  sort_every;
             }
+            
+            
             comm.borders(atom);
             #ifdef BF
             MPI_Aint f_address;
             MPI_Get_address(atom.f, &f_address); 
             MPI_Send(&f_address, 1, MPI_AINT, 1, 0, nic_host_communicator);
             #endif
+            
             #pragma omp master
             {
               timer.stamp_extra_stop(TIME_TEST);
@@ -203,58 +215,82 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
           #pragma omp barrier
 
           neighbor.build(atom);
-
+          
           // #pragma omp barrier
+          
           #ifdef BF
             comm_neigh_to_bf(atom, neighbor,comm, n);
           #endif
+          
+          
           #pragma omp master
           timer.stamp(TIME_NEIGH);
         }
-
+        
         force->evflag = (n + 1) % thermo.nstat == 0;
+        
         #ifdef BF
         if((n + 1) % neighbor.every) {
         #endif
           force->compute(atom, neighbor, comm, comm.me);
+          
           #pragma omp master
           timer.stamp(TIME_FORCE);
         
           if(neighbor.halfneigh && neighbor.ghost_newton) {
             comm.reverse_communicate(atom);
-
+          
             #pragma omp master
             timer.stamp(TIME_COMM);
-            
+           
           }
+          
+          
         #ifdef BF  
         }else{
-          MPI_Barrier(nic_host_communicator); 
+          MPI_Barrier(nic_host_communicator);
         }
-         #endif
+        #endif
 
         v = atom.v;
         f = atom.f;
         nlocal = atom.nlocal;
-
+        
         #pragma omp barrier
 
         finalIntegrate();
         
-        if(thermo.nstat) thermo.compute(n + 1, atom, neighbor, force, timer, comm);
-
+        if(thermo.nstat){
+          #ifdef BF
+          if(((n + 1) % neighbor.every) == 0) {
+            MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+            MPI_Recv(force_thermo, 2, MPI_DOUBLE, 1, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+            force->eng_vdwl=force_thermo[0]; 
+            force->virial=force_thermo[1];
+          } 
+          #endif
+           thermo.compute(n + 1, atom, neighbor, force, timer, comm);
+        }
+        
         
       } else{
           #ifdef BF
             if(((n + 1) % neighbor.every) == 0) {
+              
+              MPI_Barrier(nic_host_communicator);
               comm_atom_to_bf(atom, n);
+              
+              MPI_Barrier(nic_host_communicator);
+              
               comm.communicate(atom);
+              force->evflag = (n + 1) % thermo.nstat == 0;
               force->compute(atom, neighbor, comm, comm.me);
               if(neighbor.halfneigh && neighbor.ghost_newton) {
                 comm.reverse_communicate(atom);
               }
               
               comm.exchange_bf(atom);
+            
               if(n+1>=next_sort) {
                 MPI_Aint sorted_index_address;
                 MPI_Recv(&sorted_index_address, 1, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
@@ -262,23 +298,28 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
                 MPI_Get(atom.sorted_index,atom.nlocal, MPI_INT, 0, sorted_index_address, atom.nlocal, MPI_INT, win_sorted_index);
                 MPI_Win_flush_local(0, win_sorted_index);
                 MPI_Win_unlock(0, win_sorted_index);
+                
                 atom.sort_bf();
                 next_sort +=  sort_every;
               }
-              OMPFORSCHEDULE
-              for(MMD_int i = 0; i < nlocal; i++) {
-                atom.v[i * PAD + 0] += dtforce * atom.f[i * PAD + 0];
-                atom.v[i * PAD + 1] += dtforce * atom.f[i * PAD + 1];
-                atom.v[i * PAD + 2] += dtforce * atom.f[i * PAD + 2];
-              }
               comm_force_to_host(atom);
               MPI_Barrier(nic_host_communicator);
+              if(thermo.nstat){
+                        MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+                        MPI_Send(force_thermo, 2, MPI_DOUBLE, 0, 0, nic_host_communicator);
+              }
               comm_neigh_to_bf(atom, neighbor, comm, n);
+              
+              
+              
+
+              
             }
           #endif
         }
       }
     } //end OpenMP parallel
+    
     if(isHost){
       double sum=0.0;
       for(int i=0; i<(atom.nlocal+atom.nghost)*PAD;i++){

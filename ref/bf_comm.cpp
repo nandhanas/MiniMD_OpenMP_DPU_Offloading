@@ -10,7 +10,7 @@ MPI_Comm hosts_communicator;
 MPI_Comm nic_host_communicator;
 int isHost;
 int x_is_ready;
-MPI_Aint addresses[4];
+MPI_Aint addresses[5];
 
 //Bf shared windows
 MPI_Win win_numneigh;
@@ -50,12 +50,10 @@ int bf_win_setup(){
         MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_numneigh);
 
         MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_x);
-        MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_f);
         MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_type);
+        MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_f);
         MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_sorted_index);
 
-        //MPI_Win_create(&x_is_ready, sizeof(int), sizeof(int), MPI_INFO_NULL, nic_host_communicator, &win_x_ready);
-        //MPI_Win_create(atom_addresses, 2*sizeof(MPI_Aint), sizeof(MPI_Aint), MPI_INFO_NULL, nic_host_communicator, &win_atom_addresses);
         return 0;
 }
 
@@ -73,7 +71,8 @@ void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n){
                 MPI_Get_address(neighbor.neighbors, &addresses[1]);
                 MPI_Get_address(atom.x, &addresses[2]); 
                 MPI_Get_address(atom.type, &addresses[3]);
-                MPI_Send(addresses, 4, MPI_AINT, 1, 0, nic_host_communicator);
+                MPI_Get_address(atom.v, &addresses[4]);
+                MPI_Send(addresses, 5, MPI_AINT, 1, 0, nic_host_communicator);
 
                 MPI_Send(comm.sendnum, comm.nswap, MPI_INT, 1, 0, nic_host_communicator);
                 MPI_Send(comm.recvnum, comm.nswap, MPI_INT, 1, 0, nic_host_communicator);
@@ -81,16 +80,7 @@ void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n){
                 for(int iswap=0; iswap < comm.nswap; iswap++){
                         MPI_Send(comm.sendlist[iswap], comm.sendnum[iswap],MPI_INT, 1, 0, nic_host_communicator);
                 }
-                /*recvnum[iswap], 
-                sendnum[iswap]
-                firstrecv[iswap]
-                reverse_send_size[iswap]
-                reverse_recv_size[iswap]
                 
-                sendlist[iswap]*/
-                
-                //MPI_Get_address(type, &atom_addresses[1]);
-                //MPI_Send(atom_addresses, 1, MPI_AINT, 1, 0, nic_host_communicator);
 
         }
         else{
@@ -101,7 +91,7 @@ void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n){
                 
                 const int nall = atom.nlocal + atom.nghost;
                 neighbor.growneigh(nall);
-                MPI_Recv(addresses, 4, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+                MPI_Recv(addresses, 5, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
         
                 int nmax = neighbor.getnmax();
         
@@ -144,37 +134,11 @@ void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n){
 void comm_atom_to_bf(Atom &atom, int n){
         
         int features[2]={atom.nlocal, atom.nghost};               
-        if(isHost){
-                //MPI_Send(features, 2, MPI_INT, 1, 0, nic_host_communicator);
-                
-                //MPI_Get_address(atom.x, &atom_addresses[0]);
-                //MPI_Get_address(atom.type, &atom_addresses[1]);
-                //MPI_Send(atom_addresses, 2, MPI_AINT, 1, 0, nic_host_communicator);
-                  
-                
-
-        }
-        else{
-                
-                //MPI_Recv(features, 2, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
-                //atom.nlocal = features[0];
-                //atom.nghost = features[1]; 
-                
-                //MPI_Recv(atom_addresses, 1, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
-                //MPI_Recv(&x_is_ready, 1, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
-                MPI_Barrier(nic_host_communicator);
+        if(!isHost){
                 MPI_Win_lock (MPI_LOCK_SHARED, 0, 0, win_x);
                 MPI_Get(atom.x, (atom.nlocal+atom.nghost)*PAD, MPI_DOUBLE, 0, addresses[2], (atom.nlocal+atom.nghost)*PAD, MPI_DOUBLE, win_x);
-                //MPI_Win_fence(0, win_x);
                 MPI_Win_flush_local(0, win_x);
                 MPI_Win_unlock (0, win_x);
-                        
-                MPI_Barrier(nic_host_communicator);
-                 
-                /*MPI_Win_lock (MPI_LOCK_SHARED, 0, 0, win_type);
-                MPI_Get(atom.type, (atom.nlocal+atom.nghost), MPI_INT, 0, atom_addresses[1], (atom.nlocal+atom.nghost), MPI_INT, win_type);
-                MPI_Win_flush_local(0, win_type);
-                MPI_Win_unlock (0, win_type);*/
         }
 }
 
@@ -183,12 +147,8 @@ void comm_force_to_host(Atom &atom){
                 MPI_Aint f_address;
                 MPI_Recv(&f_address, 1, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
                 
-
                 MPI_Win_lock(MPI_LOCK_SHARED, 0, 0, win_f);
                 MPI_Put(atom.f,atom.nlocal*PAD, MPI_DOUBLE, 0, f_address, atom.nlocal*PAD, MPI_DOUBLE, win_f);
-                //MPI_Accumulate(, int origin_count, MPI_Datatype origin_dtype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_dtype, MPI_Op op, MPI_Win win)
                 MPI_Win_flush_local(0, win_f);
-                MPI_Win_unlock(0, win_f);
-        
-        
+                MPI_Win_unlock(0, win_f);      
 }
