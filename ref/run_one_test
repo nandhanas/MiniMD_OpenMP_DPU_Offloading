@@ -48,6 +48,8 @@ fi
 
 #do the testrun
 ${MPISTART} -np $2 ${MPIOPTIONS} ./$1 -t $3 -s $4 -n $5 --half_neigh $6 -gn $7 --yaml_output 0 -dm -i in.$8.miniMD > out.test
+-np 2 -npernode 1 -hostfile hostfile /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_intel -n 50
+-np 2 -npernode 1 -hostfile nicfile /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_arm -n 50
 
 
 #get the filename of the equivalent reference output

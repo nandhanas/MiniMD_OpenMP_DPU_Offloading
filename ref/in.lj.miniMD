@@ -9,6 +9,6 @@ lj	           force style (lj or eam)
 0.005          timestep size 
 1.44           initial temperature 
 0.8442         density 
-10              reneighboring every this many steps
+10             reneighboring every this many steps
 2.5 0.30       force cutoff and neighbor skin 
-10             thermo calculation every this many steps (0 = start,end)
+100             thermo calculation every this many steps (0 = start,end)
