@@ -21,11 +21,6 @@ MPI_Win win_type;
 MPI_Win win_f;
 MPI_Win win_sorted_index;
 
-MPI_Request *s_f_req;
-MPI_Request *r_f_req;
-MPI_Request *s_x_req;
-MPI_Request *r_x_req;
-MPI_Status *status;
 
 int chunk_num;
 
@@ -50,13 +45,6 @@ void bf_Comm_Init()
         
         MPI_Comm_split(MPI_COMM_WORLD, color, key, &nic_host_communicator);
         MPI_Comm_split(MPI_COMM_WORLD, isHost, color, &hosts_communicator);
-
-        chunk_num = 4;
-        s_f_req = new MPI_Request[chunk_num];
-        r_f_req = new MPI_Request[chunk_num];
-        s_x_req = new MPI_Request[chunk_num];
-        r_x_req = new MPI_Request[chunk_num];
-        status = new MPI_Status[chunk_num];
         
 }
 

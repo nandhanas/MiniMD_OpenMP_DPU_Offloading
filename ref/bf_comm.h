@@ -15,12 +15,8 @@ extern MPI_Win win_sorted_index;
 
 extern MPI_Aint f_address;
 
-extern MPI_Request *s_f_req;
-extern MPI_Request *r_f_req;
-extern MPI_Request *s_x_req;
-extern MPI_Request *r_x_req;
-extern MPI_Status *status;
 
-#define BF
-#define BF_pipeline
-extern int chunk_num;
+
+//#define BF
+
+

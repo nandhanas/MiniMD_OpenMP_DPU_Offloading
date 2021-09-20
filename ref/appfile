@@ -1,2 +1,2 @@
--bind-to socket -map-by socket -np 2 -hostfile hostfile /global/home/users/skaramati/snic/miniMD/miniMD_unmod/miniMD/ref/miniMD_openmpi -s 60
-#-np 2 -npernode 1 -hostfile nicfile /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_arm -s 60
+-np 2 -npernode 1 -hostfile hostfile /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_intel
+-np 2 -npernode 1 -hostfile nicfile /global/home/users/skaramati/snic/miniMD/miniMD_bf/miniMD/ref/miniMD_openmpi_arm

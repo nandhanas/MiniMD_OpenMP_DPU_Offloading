@@ -388,20 +388,9 @@ void ForceLJ::compute_fullneigh(Atom &atom, Neighbor &neighbor, int me, int pipe
 
   // loop over all neighbors of my atoms
   // store force on atom i
-  #ifdef BF_pipeline
-  int chunk_size = nlocal / chunk_num;
-  int remain = nlocal % chunk_num;
 
-  int begin = 0;
-  int end = 0;
-
-  for (int ii = 0; ii < chunk_num; ii+= 1){
-    begin = end;
-    end = end + chunk_size + int(ii < remain);
-    
-  #endif
-    OMPFORSCHEDULE
-    for(int i = begin; i < end; i++) {
+  OMPFORSCHEDULE
+  for(int i = 0; i < nlocal; i++) {
       const int* const neighs = &neighbor.neighbors[i * neighbor.maxneighs];
       const int numneighs = neighbor.numneigh[i];
       const MMD_float xtmp = x[i * PAD + 0];
@@ -449,12 +438,6 @@ void ForceLJ::compute_fullneigh(Atom &atom, Neighbor &neighbor, int me, int pipe
       f[i * PAD + 2] += fiz;
 
     }
-    
-  #ifdef BF_pipeline
-      
-  }
-  
-  #endif
 
   t_eng_vdwl *= 4.0;
   t_virial *= 0.5;
