@@ -379,7 +379,7 @@ void Comm::exchange(Atom &atom)
   
   /* loop over dimensions */
   int tid = omp_get_thread_num();
-  
+
   for(idim = 0; idim < 3; idim++) {
 
     /* only exchange if more than one proc in this dimension */
@@ -476,7 +476,7 @@ void Comm::exchange(Atom &atom)
     for(int i = 0; i < nsend; i++)
       if(exc_sendlist_thread[tid][i] < nlocal - total_nsend)
         nholes++;
-
+    
     nholes_thread[tid] = nholes;
     #pragma omp barrier
     
@@ -501,7 +501,8 @@ void Comm::exchange(Atom &atom)
     }
 
     
-    for(int k = 0; k < nsend; k++) {
+    //for(int k = 0; k < nsend; k++) {
+    for(int k = nsend-1; k >=0; k--) {
       atom.pack_exchange(exc_sendlist_thread[tid][k], &buf_send[(k + nsend_thread[tid] - nsend) * 7]);
 
       if(exc_sendlist_thread[tid][k] < nlocal - total_nsend) {
@@ -929,7 +930,7 @@ void Comm::exchange_bf(Atom &atom)
 
   /* loop over dimensions */
   int tid = omp_get_thread_num();
-
+  
   for(idim = 0; idim < 3; idim++) {
 
     /* only exchange if more than one proc in this dimension */
@@ -1003,7 +1004,7 @@ void Comm::exchange_bf(Atom &atom)
     }
 
     nsend_thread[tid] = nsend;
-
+    
     #pragma omp barrier
 
     #pragma omp master
@@ -1026,7 +1027,7 @@ void Comm::exchange_bf(Atom &atom)
     for(int i = 0; i < nsend; i++)
       if(exc_sendlist_thread[tid][i] < nlocal - total_nsend)
         nholes++;
-
+    
     nholes_thread[tid] = nholes;
     #pragma omp barrier
 
@@ -1051,7 +1052,8 @@ void Comm::exchange_bf(Atom &atom)
     }
 
 
-    for(int k = 0; k < nsend; k++) {
+    //for(int k = 0; k < nsend; k++) {
+    for(int k = nsend-1; k >=0; k--) {
       atom.pack_exchange_bf(exc_sendlist_thread[tid][k], &buf_send[(k + nsend_thread[tid] - nsend) * 6]);
 
       if(exc_sendlist_thread[tid][k] < nlocal - total_nsend) {

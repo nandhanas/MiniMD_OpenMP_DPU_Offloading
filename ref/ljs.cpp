@@ -64,9 +64,9 @@ int read_lammps_data(Atom &atom, Comm &comm, Neighbor &neighbor, Integrate &inte
 
 // bf
 void bf_Comm_Init();
-void bf_win_setup();
+void bf_win_setup(Atom &atom, Neighbor &neighbor, Comm &comm);
 void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int);
-
+void comm_border_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 
 int main(int argc, char** argv)
 {
@@ -286,8 +286,8 @@ int main(int argc, char** argv)
 
   Force* force;
 
-  bf_win_setup();
-
+  
+  
   if(in.forcetype == FORCEEAM) {
     force = (Force*) new ForceEAM(ntypes);
 
@@ -322,7 +322,7 @@ int main(int argc, char** argv)
   }
 
   neighbor.ghost_newton = ghost_newton;
-
+  
   omp_set_num_threads(num_threads);
 
   neighbor.timer = &timer;
@@ -410,7 +410,7 @@ int main(int argc, char** argv)
     create_box(atom, in.nx, in.ny, in.nz, in.rho);
 
     comm.setup(neighbor.cutneigh, atom);
-
+    bf_win_setup(atom, neighbor, comm);
     neighbor.setup(atom);
 
     integrate.setup();
@@ -424,7 +424,7 @@ int main(int argc, char** argv)
     if(isHost) create_velocity(in.t_request, atom, thermo);
     
   }
-
+  
   if(isHost && me == 0)
     printf("# Done .... \n");
 
@@ -484,9 +484,14 @@ int main(int argc, char** argv)
     }
     
   }
+  MPI_Barrier(MPI_COMM_WORLD);
+  
   #ifdef BF
+    comm_border_to_bf(atom, neighbor, comm, -1);
     comm_neigh_to_bf(atom, neighbor,comm, -1);
   #endif
+  
+  MPI_Barrier(MPI_COMM_WORLD);
   timer.barrier_start(TIME_TOTAL);
   integrate.run(atom, force, neighbor, comm, thermo, timer);
   timer.barrier_stop(TIME_TOTAL);
@@ -518,26 +523,10 @@ int main(int argc, char** argv)
     if(yaml_output)
       output(in, atom, force, neighbor, comm, thermo, integrate, timer, screen_yaml);
   }
+  
   delete force;
   MPI_Barrier(MPI_COMM_WORLD);
-  #ifdef BF
-    if(isHost){
-      MPI_Win_detach(win_numneigh, neighbor.numneigh);
-      MPI_Win_detach(win_neighbors, neighbor.neighbors);
-      MPI_Win_detach(win_x, atom.x);
-      MPI_Win_detach(win_type, atom.type);
-      MPI_Win_detach(win_f, atom.f);
-      MPI_Win_detach(win_sorted_index, atom.sorted_index);
-
-    }
-    
-    MPI_Win_free(&win_numneigh);
-    MPI_Win_free(&win_neighbors);
-    MPI_Win_free(&win_x);
-    MPI_Win_free(&win_type);
-    MPI_Win_free(&win_f);
-    MPI_Win_free(&win_sorted_index);
-  #endif
+  
   MPI_Finalize();
   return 0;
 }

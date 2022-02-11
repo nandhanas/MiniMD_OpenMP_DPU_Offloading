@@ -1,0 +1,170 @@
+# Create System:
+# Create System:
+# Done .... 
+# miniMD-Reference 2.0 (MPI+OpenMP) output ...
+# Run Settings: 
+	# MPI processes: 16
+	# OpenMP threads: 1
+	# Inputfile: in.lj.miniMD
+	# Datafile: None
+# Physics Settings: 
+	# ForceStyle: LJ
+	# Force Parameters: 1.00 1.00
+	# Units: LJ
+	# Atoms: 108000
+	# Atom types: 4
+	# System size: 50.39 50.39 50.39 (unit cells: 30 30 30)
+	# Density: 0.844200
+	# Force cutoff: 2.500000
+	# Timestep size: 0.005000
+# Technical Settings: 
+	# Neigh cutoff: 2.800000
+	# Half neighborlists: 1
+	# Neighbor bins: 25 25 25
+	# Neighbor frequency: 5
+	# Sorting frequency: 5
+	# Thermo frequency: 1000
+	# Ghost Newton: 1
+	# Use intrinsics: 0
+	# Do safe exchange: 0
+	# Size of float: 8
+
+# Starting dynamics ...
+# Timestep T U P Time
+0 1.440000e+00 -6.773368e+00 -5.019681e+00  0.000
+1000 6.996157e-01 -5.669365e+00 7.363918e-01  4.029
+
+
+# Performance Summary:
+# MPI_proc OMP_threads nsteps natoms t_total t_force t_neigh t_comm t_other performance perf/thread grep_string t_extra
+16 1 1000 108000 4.029084 1.833999 1.656768 0.433420 0.104898 26805099.504982 1675318.719061 PERF_SUMMARY 0.103884
+
+
+[1644551926.392241] [thor-bf30:117553:0]           mpool.c:44   UCX  WARN  object 0x2c957680 was not returned to mpool ucp_requests
+[1644551926.392287] [thor-bf30:117553:0]           mpool.c:44   UCX  WARN  object 0x2c9577c0 was not returned to mpool ucp_requests
+[1644551926.392298] [thor-bf30:117553:0]           mpool.c:44   UCX  WARN  object 0x2c957900 was not returned to mpool ucp_requests
+[1644551926.392304] [thor-bf30:117553:0]           mpool.c:44   UCX  WARN  object 0x2c957e00 was not returned to mpool ucp_requests
+[1644551926.392893] [thor-bf31:117396:0]           mpool.c:44   UCX  WARN  object 0x340ed680 was not returned to mpool ucp_requests
+[1644551926.392940] [thor-bf31:117396:0]           mpool.c:44   UCX  WARN  object 0x340ed7c0 was not returned to mpool ucp_requests
+[1644551926.392951] [thor-bf31:117396:0]           mpool.c:44   UCX  WARN  object 0x340ed900 was not returned to mpool ucp_requests
+[1644551926.392962] [thor-bf31:117396:0]           mpool.c:44   UCX  WARN  object 0x340eda40 was not returned to mpool ucp_requests
+[1644551926.393209] [thor-bf23:116948:0]           mpool.c:44   UCX  WARN  object 0x22e4d680 was not returned to mpool ucp_requests
+[1644551926.393254] [thor-bf23:116948:0]           mpool.c:44   UCX  WARN  object 0x22e4d7c0 was not returned to mpool ucp_requests
+[1644551926.393265] [thor-bf23:116948:0]           mpool.c:44   UCX  WARN  object 0x22e4d900 was not returned to mpool ucp_requests
+[1644551926.393271] [thor-bf23:116948:0]           mpool.c:44   UCX  WARN  object 0x22e4da40 was not returned to mpool ucp_requests
+[1644551926.394160] [thor-bf19:471253:0]           mpool.c:44   UCX  WARN  object 0x3260e680 was not returned to mpool ucp_requests
+[1644551926.394210] [thor-bf19:471253:0]           mpool.c:44   UCX  WARN  object 0x3260e7c0 was not returned to mpool ucp_requests
+[1644551926.394221] [thor-bf19:471253:0]           mpool.c:44   UCX  WARN  object 0x3260e900 was not returned to mpool ucp_requests
+[1644551926.394227] [thor-bf19:471253:0]           mpool.c:44   UCX  WARN  object 0x3260ea40 was not returned to mpool ucp_requests
+[1644551926.394244] [thor-bf29:117500:0]           mpool.c:44   UCX  WARN  object 0x1e5e9680 was not returned to mpool ucp_requests
+[1644551926.394291] [thor-bf29:117500:0]           mpool.c:44   UCX  WARN  object 0x1e5e97c0 was not returned to mpool ucp_requests
+[1644551926.394301] [thor-bf29:117500:0]           mpool.c:44   UCX  WARN  object 0x1e5e9900 was not returned to mpool ucp_requests
+[1644551926.394310] [thor-bf29:117500:0]           mpool.c:44   UCX  WARN  object 0x1e5e9a40 was not returned to mpool ucp_requests
+[1644551926.394268] [thor-bf26:130694:0]           mpool.c:44   UCX  WARN  object 0x846e680 was not returned to mpool ucp_requests
+[1644551926.394315] [thor-bf26:130694:0]           mpool.c:44   UCX  WARN  object 0x846e7c0 was not returned to mpool ucp_requests
+[1644551926.394327] [thor-bf26:130694:0]           mpool.c:44   UCX  WARN  object 0x846e900 was not returned to mpool ucp_requests
+[1644551926.394332] [thor-bf26:130694:0]           mpool.c:44   UCX  WARN  object 0x846ef40 was not returned to mpool ucp_requests
+[1644551926.394368] [thor-bf27:117718:0]           mpool.c:44   UCX  WARN  object 0x15d86680 was not returned to mpool ucp_requests
+[1644551926.394413] [thor-bf27:117718:0]           mpool.c:44   UCX  WARN  object 0x15d867c0 was not returned to mpool ucp_requests
+[1644551926.394425] [thor-bf27:117718:0]           mpool.c:44   UCX  WARN  object 0x15d86900 was not returned to mpool ucp_requests
+[1644551926.394435] [thor-bf27:117718:0]           mpool.c:44   UCX  WARN  object 0x15d86a40 was not returned to mpool ucp_requests
+[1644551926.394360] [thor-bf24:110519:0]           mpool.c:44   UCX  WARN  object 0x30583680 was not returned to mpool ucp_requests
+[1644551926.394407] [thor-bf24:110519:0]           mpool.c:44   UCX  WARN  object 0x305837c0 was not returned to mpool ucp_requests
+[1644551926.394419] [thor-bf24:110519:0]           mpool.c:44   UCX  WARN  object 0x30583900 was not returned to mpool ucp_requests
+[1644551926.394428] [thor-bf24:110519:0]           mpool.c:44   UCX  WARN  object 0x30583a40 was not returned to mpool ucp_requests
+[1644551926.394539] [thor-bf22:142968:0]           mpool.c:44   UCX  WARN  object 0x16716680 was not returned to mpool ucp_requests
+[1644551926.394588] [thor-bf22:142968:0]           mpool.c:44   UCX  WARN  object 0x167167c0 was not returned to mpool ucp_requests
+[1644551926.394600] [thor-bf22:142968:0]           mpool.c:44   UCX  WARN  object 0x16716900 was not returned to mpool ucp_requests
+[1644551926.394609] [thor-bf22:142968:0]           mpool.c:44   UCX  WARN  object 0x16716a40 was not returned to mpool ucp_requests
+[1644551926.394748] [thor-bf28:117617:0]           mpool.c:44   UCX  WARN  object 0xd1e6680 was not returned to mpool ucp_requests
+[1644551926.394796] [thor-bf28:117617:0]           mpool.c:44   UCX  WARN  object 0xd1e67c0 was not returned to mpool ucp_requests
+[1644551926.394807] [thor-bf28:117617:0]           mpool.c:44   UCX  WARN  object 0xd1e6900 was not returned to mpool ucp_requests
+[1644551926.394812] [thor-bf28:117617:0]           mpool.c:44   UCX  WARN  object 0xd1e6a40 was not returned to mpool ucp_requests
+[1644551926.395230] [thor-bf17:227746:0]           mpool.c:44   UCX  WARN  object 0x154da680 was not returned to mpool ucp_requests
+[1644551926.395278] [thor-bf17:227746:0]           mpool.c:44   UCX  WARN  object 0x154da7c0 was not returned to mpool ucp_requests
+[1644551926.395289] [thor-bf17:227746:0]           mpool.c:44   UCX  WARN  object 0x154da900 was not returned to mpool ucp_requests
+[1644551926.395298] [thor-bf17:227746:0]           mpool.c:44   UCX  WARN  object 0x154daa40 was not returned to mpool ucp_requests
+[1644551926.395305] [thor-bf25:128638:0]           mpool.c:44   UCX  WARN  object 0x40851680 was not returned to mpool ucp_requests
+[1644551926.395352] [thor-bf25:128638:0]           mpool.c:44   UCX  WARN  object 0x408517c0 was not returned to mpool ucp_requests
+[1644551926.395364] [thor-bf25:128638:0]           mpool.c:44   UCX  WARN  object 0x40851900 was not returned to mpool ucp_requests
+[1644551926.395369] [thor-bf25:128638:0]           mpool.c:44   UCX  WARN  object 0x40851a40 was not returned to mpool ucp_requests
+[1644551926.396215] [thor-bf18:137964:0]           mpool.c:44   UCX  WARN  object 0x1405680 was not returned to mpool ucp_requests
+[1644551926.396261] [thor-bf18:137964:0]           mpool.c:44   UCX  WARN  object 0x14057c0 was not returned to mpool ucp_requests
+[1644551926.396272] [thor-bf18:137964:0]           mpool.c:44   UCX  WARN  object 0x1405900 was not returned to mpool ucp_requests
+[1644551926.396281] [thor-bf18:137964:0]           mpool.c:44   UCX  WARN  object 0x1405e00 was not returned to mpool ucp_requests
+[1644551926.396899] [thor-bf21:125874:0]           mpool.c:44   UCX  WARN  object 0x8d46680 was not returned to mpool ucp_requests
+[1644551926.396945] [thor-bf21:125874:0]           mpool.c:44   UCX  WARN  object 0x8d467c0 was not returned to mpool ucp_requests
+[1644551926.396955] [thor-bf21:125874:0]           mpool.c:44   UCX  WARN  object 0x8d46900 was not returned to mpool ucp_requests
+[1644551926.396961] [thor-bf21:125874:0]           mpool.c:44   UCX  WARN  object 0x8d46a40 was not returned to mpool ucp_requests
+[1644551926.398038] [thor-bf20:130405:0]           mpool.c:44   UCX  WARN  object 0x32ffe680 was not returned to mpool ucp_requests
+[1644551926.398084] [thor-bf20:130405:0]           mpool.c:44   UCX  WARN  object 0x32ffe7c0 was not returned to mpool ucp_requests
+[1644551926.398096] [thor-bf20:130405:0]           mpool.c:44   UCX  WARN  object 0x32ffe900 was not returned to mpool ucp_requests
+[1644551926.398110] [thor-bf20:130405:0]           mpool.c:44   UCX  WARN  object 0x32ffea40 was not returned to mpool ucp_requests
+[1644551926.409883] [thor-bf16:154260:0]           mpool.c:44   UCX  WARN  object 0x4818680 was not returned to mpool ucp_requests
+[1644551926.409927] [thor-bf16:154260:0]           mpool.c:44   UCX  WARN  object 0x48187c0 was not returned to mpool ucp_requests
+[1644551926.409937] [thor-bf16:154260:0]           mpool.c:44   UCX  WARN  object 0x4818900 was not returned to mpool ucp_requests
+[1644551926.409948] [thor-bf16:154260:0]           mpool.c:44   UCX  WARN  object 0x4818f40 was not returned to mpool ucp_requests
+[1644551926.439652] [thor031:153755:0]           mpool.c:44   UCX  WARN  object 0x35ea540 was not returned to mpool ucp_requests
+[1644551926.439672] [thor031:153755:0]           mpool.c:44   UCX  WARN  object 0x35ea680 was not returned to mpool ucp_requests
+[1644551926.439674] [thor031:153755:0]           mpool.c:44   UCX  WARN  object 0x35ea7c0 was not returned to mpool ucp_requests
+[1644551926.439676] [thor031:153755:0]           mpool.c:44   UCX  WARN  object 0x35ea900 was not returned to mpool ucp_requests
+[1644551926.439677] [thor030:156850:0]           mpool.c:44   UCX  WARN  object 0x330d540 was not returned to mpool ucp_requests
+[1644551926.439694] [thor030:156850:0]           mpool.c:44   UCX  WARN  object 0x330d680 was not returned to mpool ucp_requests
+[1644551926.439696] [thor030:156850:0]           mpool.c:44   UCX  WARN  object 0x330d7c0 was not returned to mpool ucp_requests
+[1644551926.439698] [thor030:156850:0]           mpool.c:44   UCX  WARN  object 0x330d900 was not returned to mpool ucp_requests
+[1644551926.440253] [thor023:165873:0]           mpool.c:44   UCX  WARN  object 0x378b540 was not returned to mpool ucp_requests
+[1644551926.440274] [thor023:165873:0]           mpool.c:44   UCX  WARN  object 0x378b680 was not returned to mpool ucp_requests
+[1644551926.440277] [thor023:165873:0]           mpool.c:44   UCX  WARN  object 0x378b7c0 was not returned to mpool ucp_requests
+[1644551926.440279] [thor023:165873:0]           mpool.c:44   UCX  WARN  object 0x378b900 was not returned to mpool ucp_requests
+[1644551926.441499] [thor019:1172422:0]           mpool.c:44   UCX  WARN  object 0x286e540 was not returned to mpool ucp_requests
+[1644551926.441518] [thor019:1172422:0]           mpool.c:44   UCX  WARN  object 0x286e680 was not returned to mpool ucp_requests
+[1644551926.441521] [thor019:1172422:0]           mpool.c:44   UCX  WARN  object 0x286e7c0 was not returned to mpool ucp_requests
+[1644551926.441524] [thor019:1172422:0]           mpool.c:44   UCX  WARN  object 0x286e900 was not returned to mpool ucp_requests
+[1644551926.442616] [thor029:156954:0]           mpool.c:44   UCX  WARN  object 0x37b5540 was not returned to mpool ucp_requests
+[1644551926.442635] [thor029:156954:0]           mpool.c:44   UCX  WARN  object 0x37b5680 was not returned to mpool ucp_requests
+[1644551926.442637] [thor029:156954:0]           mpool.c:44   UCX  WARN  object 0x37b57c0 was not returned to mpool ucp_requests
+[1644551926.442639] [thor029:156954:0]           mpool.c:44   UCX  WARN  object 0x37b5900 was not returned to mpool ucp_requests
+[1644551926.442767] [thor027:163410:0]           mpool.c:44   UCX  WARN  object 0x23f8540 was not returned to mpool ucp_requests
+[1644551926.442784] [thor027:163410:0]           mpool.c:44   UCX  WARN  object 0x23f8680 was not returned to mpool ucp_requests
+[1644551926.442787] [thor027:163410:0]           mpool.c:44   UCX  WARN  object 0x23f87c0 was not returned to mpool ucp_requests
+[1644551926.442789] [thor027:163410:0]           mpool.c:44   UCX  WARN  object 0x23f8900 was not returned to mpool ucp_requests
+[1644551926.442826] [thor022:181030:0]           mpool.c:44   UCX  WARN  object 0x276f540 was not returned to mpool ucp_requests
+[1644551926.442842] [thor022:181030:0]           mpool.c:44   UCX  WARN  object 0x276f680 was not returned to mpool ucp_requests
+[1644551926.442845] [thor022:181030:0]           mpool.c:44   UCX  WARN  object 0x276f7c0 was not returned to mpool ucp_requests
+[1644551926.442847] [thor022:181030:0]           mpool.c:44   UCX  WARN  object 0x276f900 was not returned to mpool ucp_requests
+[1644551926.443238] [thor017:295664:0]           mpool.c:44   UCX  WARN  object 0x1ead540 was not returned to mpool ucp_requests
+[1644551926.443255] [thor017:295664:0]           mpool.c:44   UCX  WARN  object 0x1ead680 was not returned to mpool ucp_requests
+[1644551926.443257] [thor017:295664:0]           mpool.c:44   UCX  WARN  object 0x1ead7c0 was not returned to mpool ucp_requests
+[1644551926.443259] [thor017:295664:0]           mpool.c:44   UCX  WARN  object 0x1ead900 was not returned to mpool ucp_requests
+[1644551926.444775] [thor026:163779:0]           mpool.c:44   UCX  WARN  object 0x2039540 was not returned to mpool ucp_requests
+[1644551926.444793] [thor026:163779:0]           mpool.c:44   UCX  WARN  object 0x2039680 was not returned to mpool ucp_requests
+[1644551926.444796] [thor026:163779:0]           mpool.c:44   UCX  WARN  object 0x20397c0 was not returned to mpool ucp_requests
+[1644551926.444798] [thor026:163779:0]           mpool.c:44   UCX  WARN  object 0x2039900 was not returned to mpool ucp_requests
+[1644551926.445369] [thor016:212453:0]           mpool.c:44   UCX  WARN  object 0x2b4e540 was not returned to mpool ucp_requests
+[1644551926.445380] [thor016:212453:0]           mpool.c:44   UCX  WARN  object 0x2b4e680 was not returned to mpool ucp_requests
+[1644551926.445382] [thor016:212453:0]           mpool.c:44   UCX  WARN  object 0x2b4e7c0 was not returned to mpool ucp_requests
+[1644551926.445384] [thor016:212453:0]           mpool.c:44   UCX  WARN  object 0x2b4e900 was not returned to mpool ucp_requests
+[1644551926.446325] [thor025:180881:0]           mpool.c:44   UCX  WARN  object 0x20d9540 was not returned to mpool ucp_requests
+[1644551926.446344] [thor025:180881:0]           mpool.c:44   UCX  WARN  object 0x20d9680 was not returned to mpool ucp_requests
+[1644551926.446347] [thor025:180881:0]           mpool.c:44   UCX  WARN  object 0x20d97c0 was not returned to mpool ucp_requests
+[1644551926.446349] [thor025:180881:0]           mpool.c:44   UCX  WARN  object 0x20d9900 was not returned to mpool ucp_requests
+[1644551926.446524] [thor024:152408:0]           mpool.c:44   UCX  WARN  object 0x29da540 was not returned to mpool ucp_requests
+[1644551926.446544] [thor024:152408:0]           mpool.c:44   UCX  WARN  object 0x29da680 was not returned to mpool ucp_requests
+[1644551926.446547] [thor024:152408:0]           mpool.c:44   UCX  WARN  object 0x29da7c0 was not returned to mpool ucp_requests
+[1644551926.446549] [thor024:152408:0]           mpool.c:44   UCX  WARN  object 0x29da900 was not returned to mpool ucp_requests
+[1644551926.446608] [thor018:186529:0]           mpool.c:44   UCX  WARN  object 0x334c540 was not returned to mpool ucp_requests
+[1644551926.446627] [thor018:186529:0]           mpool.c:44   UCX  WARN  object 0x334c680 was not returned to mpool ucp_requests
+[1644551926.446630] [thor018:186529:0]           mpool.c:44   UCX  WARN  object 0x334c7c0 was not returned to mpool ucp_requests
+[1644551926.446632] [thor018:186529:0]           mpool.c:44   UCX  WARN  object 0x334cf40 was not returned to mpool ucp_requests
+[1644551926.446677] [thor028:155176:0]           mpool.c:44   UCX  WARN  object 0x2aa4540 was not returned to mpool ucp_requests
+[1644551926.446695] [thor028:155176:0]           mpool.c:44   UCX  WARN  object 0x2aa4680 was not returned to mpool ucp_requests
+[1644551926.446697] [thor028:155176:0]           mpool.c:44   UCX  WARN  object 0x2aa47c0 was not returned to mpool ucp_requests
+[1644551926.446699] [thor028:155176:0]           mpool.c:44   UCX  WARN  object 0x2aa4900 was not returned to mpool ucp_requests
+[1644551926.448054] [thor020:178171:0]           mpool.c:44   UCX  WARN  object 0x229d540 was not returned to mpool ucp_requests
+[1644551926.448071] [thor020:178171:0]           mpool.c:44   UCX  WARN  object 0x229d680 was not returned to mpool ucp_requests
+[1644551926.448074] [thor020:178171:0]           mpool.c:44   UCX  WARN  object 0x229d7c0 was not returned to mpool ucp_requests
+[1644551926.448076] [thor020:178171:0]           mpool.c:44   UCX  WARN  object 0x229db80 was not returned to mpool ucp_requests
+[1644551926.448936] [thor021:170127:0]           mpool.c:44   UCX  WARN  object 0x2481540 was not returned to mpool ucp_requests
+[1644551926.448953] [thor021:170127:0]           mpool.c:44   UCX  WARN  object 0x2481680 was not returned to mpool ucp_requests
+[1644551926.448955] [thor021:170127:0]           mpool.c:44   UCX  WARN  object 0x24817c0 was not returned to mpool ucp_requests
+[1644551926.448958] [thor021:170127:0]           mpool.c:44   UCX  WARN  object 0x2481900 was not returned to mpool ucp_requests

@@ -40,6 +40,9 @@
 class Integrate
 {
   public:
+    MPI_Request x_req;
+    MPI_Request sort_req;
+    MPI_Request f_req;
     MMD_float dt;
     MMD_float dtforce;
     MMD_int ntimes;
@@ -52,7 +55,7 @@ class Integrate
     Integrate();
     ~Integrate();
     void setup();
-    void initialIntegrate(int);
+    void initialIntegrate();
     void finalIntegrate();
     void run(Atom &, Force*, Neighbor &, Comm &, Thermo &, Timer &);
 

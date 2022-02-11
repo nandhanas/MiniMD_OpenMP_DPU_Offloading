@@ -40,7 +40,7 @@
 void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 void comm_atom_to_bf(Atom &atom, int n);
 void comm_force_to_host(Atom &atom);
-
+void comm_border_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 
 Integrate::Integrate() {sort_every=20;}
 Integrate::~Integrate() {}
@@ -50,7 +50,7 @@ void Integrate::setup()
   dtforce = 0.5 * dt;
 }
 
-void Integrate::initialIntegrate(int nb)
+void Integrate::initialIntegrate()
 {
     OMPFORSCHEDULE
     for(MMD_int i = 0; i < nlocal; i++){
@@ -61,9 +61,7 @@ void Integrate::initialIntegrate(int nb)
         x[i * PAD + 1] += dt * v[i * PAD + 1];
         x[i * PAD + 2] += dt * v[i * PAD + 2];
     }
-    if(nb){
-      MPI_Barrier(nic_host_communicator);
-    }
+    
      
 }
 
@@ -82,10 +80,10 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
                     Comm &comm, Thermo &thermo, Timer &timer)
 {
   int i, n;
-
+  int first_build=0;
   comm.timer = &timer;
   timer.array[TIME_TEST] = 0.0;
-
+  MPI_Request s_req[20];
   int check_safeexchange = comm.check_safeexchange;
 
   mass = atom.mass;
@@ -109,13 +107,16 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
         xold = atom.xold;
         nlocal = atom.nlocal;
         
+        initialIntegrate();
+        
         #ifdef BF
-        if((n + 1) % neighbor.every) {
-        #endif
-          initialIntegrate(0);
-        #ifdef BF
-        }else{
-          initialIntegrate(1);  
+        if((n + 1) % neighbor.every==0) {
+          // communicate atom.x to Bluefield
+          #pragma omp master
+          {
+          MPI_Send(atom.x, nlocal*PAD, MPI_DOUBLE, 1, 0, nic_host_communicator);
+          }
+          #pragma omp barrier
         }
         #endif
         
@@ -173,10 +174,11 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
             }
             
-            #ifdef BF
-              MPI_Barrier(nic_host_communicator);
-              
-            #endif
+            if(first_build){
+             #pragma omp master
+             MPI_Waitall(8+comm.nswap, s_req, MPI_STATUSES_IGNORE);
+             #pragma omp barrier
+            }
             
             #pragma omp master
             timer.stamp_extra_start();
@@ -186,21 +188,29 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
             
             if(n+1>=next_sort) {
               atom.sort(neighbor);
-              
               #ifdef BF
-              MPI_Aint sorted_index_address;
-              MPI_Get_address(atom.sorted_index, &sorted_index_address); 
-              MPI_Send(&sorted_index_address, 1, MPI_AINT, 1, 0, nic_host_communicator);
+              // send sorted_index to the Bluefield, sorted_index indicate new atom locations after sort routine
+              #pragma omp master
+              MPI_Isend(atom.sorted_index, atom.nlocal, MPI_INT, 1, 0, nic_host_communicator, &s_req[0]);
+             
               #endif
               next_sort +=  sort_every;
             }
             
             
             comm.borders(atom);
+            // communicate boreder info to Bluefield
             #ifdef BF
-            
-            MPI_Get_address(atom.f, &f_address); 
-            MPI_Send(&f_address, 1, MPI_AINT, 1, 0, nic_host_communicator);
+              #pragma omp master
+              {
+                MPI_Isend(comm.sendnum, comm.nswap, MPI_INT, 1, 0, nic_host_communicator, &s_req[1]);
+                MPI_Isend(comm.recvnum, comm.nswap, MPI_INT, 1, 0, nic_host_communicator, &s_req[2]);
+                MPI_Isend(comm.firstrecv, comm.nswap, MPI_INT, 1, 0, nic_host_communicator, &s_req[3]);
+                for(int iswap=0; iswap < comm.nswap; iswap++){
+                        MPI_Isend(comm.sendlist[iswap], comm.sendnum[iswap],MPI_INT, 1, 0, nic_host_communicator, &s_req[4+iswap]);
+                }
+              }
+              
             #endif
             
             #pragma omp master
@@ -217,14 +227,11 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
           neighbor.build(atom);
 
-          #ifdef BF
-            comm_neigh_to_bf(atom, neighbor,comm, n);
-          #endif
+          
           
           // #pragma omp barrier
           
-          
-          
+          first_build=1;
           
           #pragma omp master
           timer.stamp(TIME_NEIGH);
@@ -249,7 +256,24 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
           }
         #ifdef BF
         }else{
-          MPI_Barrier(nic_host_communicator);
+          //recv atom f from bluefield
+          #pragma omp master
+          {
+          MPI_Recv(atom.f, atom.nlocal*PAD, MPI_DOUBLE, 1, 0, nic_host_communicator,MPI_STATUS_IGNORE);
+          }
+          #pragma omp barrier
+          //send new neihbor to bluefield
+          
+          #pragma omp master
+          {
+            int features[3]={atom.nlocal, atom.nghost, neighbor.maxneighs};
+          MPI_Isend(features, 3, MPI_INT, 1, 0, nic_host_communicator, &s_req[4+comm.nswap]);
+          MPI_Isend(neighbor.numneigh, atom.nlocal, MPI_INT, 1, 0, nic_host_communicator,&s_req[5+comm.nswap]);
+          MPI_Isend(neighbor.neighbors,neighbor.maxneighs*atom.nlocal, MPI_INT, 1, 0, nic_host_communicator,&s_req[6+comm.nswap]);
+          MPI_Isend(atom.type,(atom.nlocal+atom.nghost), MPI_INT, 1, 0, nic_host_communicator,&s_req[7+comm.nswap]);
+          }
+          
+          
         }
         #endif
         v = atom.v;
@@ -264,7 +288,9 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
           #ifdef BF
           if(((n + 1) % neighbor.every) == 0) {
             MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+            #pragma omp master
             MPI_Recv(force_thermo, 2, MPI_DOUBLE, 1, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+            #pragma omp barrier
             force->eng_vdwl=force_thermo[0]; 
             force->virial=force_thermo[1];
           } 
@@ -273,15 +299,13 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
         }
         
         
-        
       } else{
           #ifdef BF
             if(((n + 1) % neighbor.every) == 0) {
-              
-              MPI_Barrier(nic_host_communicator);
-              comm_atom_to_bf(atom, n);
-              MPI_Barrier(nic_host_communicator);
-              
+              #pragma omp master
+              MPI_Recv(atom.x, atom.nlocal*PAD, MPI_DOUBLE, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              #pragma omp barrier
+
               comm.communicate(atom);
               force->evflag = (n + 1) % thermo.nstat == 0;
               force->compute(atom, neighbor, comm, comm.me, 0);
@@ -293,27 +317,62 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
               comm.exchange_bf(atom);
               
               if(n+1>=next_sort) {
-                
-                MPI_Aint sorted_index_address;
-                MPI_Recv(&sorted_index_address, 1, MPI_AINT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
-                MPI_Win_lock(MPI_LOCK_SHARED, 0, 0, win_sorted_index);
-                MPI_Get(atom.sorted_index,atom.nlocal, MPI_INT, 0, sorted_index_address, atom.nlocal, MPI_INT, win_sorted_index);
-                MPI_Win_flush_local(0, win_sorted_index);
-                MPI_Win_unlock(0, win_sorted_index);
-                
+                #pragma omp master
+                MPI_Recv(atom.sorted_index, atom.nlocal, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+                #pragma omp barrier
                 atom.sort_bf();
                 
                 next_sort +=  sort_every;
               }
+              //recieve new border from host
+              #pragma omp master
+              {
+              MPI_Recv(comm.sendnum, comm.nswap, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              MPI_Recv(comm.recvnum, comm.nswap, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              MPI_Recv(comm.firstrecv, comm.nswap, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              for(int iswap=0; iswap < comm.nswap; iswap++){
+                comm.reverse_send_size[iswap] = comm.recvnum[iswap] * atom.reverse_size;
+                comm.reverse_recv_size[iswap] = comm.sendnum[iswap] * atom.reverse_size;
+                comm.comm_send_size[iswap] = comm.sendnum[iswap] * atom.comm_size;
+                comm.comm_recv_size[iswap] = comm.recvnum[iswap] * atom.comm_size;
+              }
+
+              for(int iswap=0; iswap < comm.nswap; iswap++){
+                if(comm.sendnum[iswap] > comm.maxsendlist[iswap]) comm.growlist(iswap, comm.sendnum[iswap]);
+                  MPI_Irecv(comm.sendlist[iswap], comm.sendnum[iswap],MPI_INT, 0, 0, nic_host_communicator, &s_req[iswap]);
+                if(comm.sendnum[iswap] * 4 > comm.maxsend) comm.growsend(comm.sendnum[iswap] * 4);
+                if(comm.recvnum[iswap] * atom.border_size > comm.maxrecv) comm.growrecv(comm.recvnum[iswap] * atom.border_size);
+              }
+
+
+              MPI_Send(atom.f, atom.nlocal*PAD, MPI_DOUBLE, 0, 0, nic_host_communicator);
+              int features[3];
               
-              comm_force_to_host(atom);
-              MPI_Barrier(nic_host_communicator);
+              MPI_Recv(features, 3, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              
+              atom.nlocal = features[0];
+              atom.nghost = features[1];
+              neighbor.maxneighs= features[2];
+              const int nall = atom.nlocal + atom.nghost;
+              neighbor.growneigh(nall);
+              MPI_Recv(neighbor.numneigh, atom.nlocal, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              MPI_Recv(neighbor.neighbors,neighbor.maxneighs*atom.nlocal, MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              while((atom.nlocal+atom.nghost) >= atom.nmax) atom.growarray();
+              MPI_Recv(atom.type,(atom.nlocal+atom.nghost), MPI_INT, 0, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+                
+              }
+              #pragma omp barrier
+                
+              
               if(thermo.nstat){
                         MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+                        #pragma omp master
                         MPI_Send(force_thermo, 2, MPI_DOUBLE, 0, 0, nic_host_communicator);
+                        #pragma omp barrier
               }
-              
-              comm_neigh_to_bf(atom, neighbor, comm, n);  
+              #pragma omp master
+              MPI_Waitall(comm.nswap, s_req, MPI_STATUSES_IGNORE);
+              #pragma omp barrier 
               
             }
           #endif

@@ -70,26 +70,12 @@ Atom::~Atom()
     destroy_2d_MMD_float_array(f);
     destroy_2d_MMD_float_array(xold);
     destroy_1d_int_array(type);
+    destroy_1d_int_array(sorted_index);
   }
 }
 
 void Atom::growarray()
 {
-  #ifdef BF
-    if(isHost){
-          if(nmax > 0) {
-              #pragma omp master
-              {
-              
-              MPI_Win_detach(win_x, x);
-              MPI_Win_detach(win_type, type);
-              MPI_Win_detach(win_f, f);
-              MPI_Win_detach(win_sorted_index, sorted_index);
-              }
-          }
-    }
-  #endif 
-
   int nold = nmax;
   nmax += DELTA;
   x = (MMD_float*) realloc_2d_MMD_float_array(x, nmax, PAD, PAD * nold);
@@ -102,18 +88,7 @@ void Atom::growarray()
   if(x == NULL || v == NULL || f == NULL || xold == NULL) {
     printf("ERROR: No memory for atoms\n");
   }
-  #ifdef BF
-    if(isHost){
-        #pragma omp master
-        {
-        
-        MPI_Win_attach(win_x, x, sizeof(MMD_float)*nmax*PAD); 
-        MPI_Win_attach(win_type, type, sizeof(int)*nmax);
-        MPI_Win_attach(win_f, f, sizeof(MMD_float)*nmax*PAD); 
-        MPI_Win_attach(win_sorted_index, sorted_index, sizeof(int)*nmax);
-        }
-    }
-  #endif 
+  
 }
 
 void Atom::addatom(MMD_float x_in, MMD_float y_in, MMD_float z_in,
@@ -387,17 +362,7 @@ void Atom::destroy_1d_int_array(int* array)
 
 void Atom::sort(Neighbor &neighbor)
 {
-  #ifdef BF
-    if(isHost){
-        #pragma omp master
-        {
-        MPI_Win_detach(win_x, x);
-        MPI_Win_detach(win_type, type);
-        
-        }
-    }
-  #endif 
-
+  
   neighbor.binatoms(*this,nlocal);
   #pragma omp barrier
 
@@ -463,15 +428,7 @@ void Atom::sort(Neighbor &neighbor)
   }
   #pragma omp barrier
 
-  #ifdef BF
-    if(isHost){
-        #pragma omp master
-        {
-        MPI_Win_attach(win_x, x, sizeof(MMD_float)*nmax*PAD);
-        MPI_Win_attach(win_type, type, sizeof(int)*nmax);
-        }
-    }
-  #endif 
+  
 }
 
 int Atom::pack_exchange_bf(int i, MMD_float* buf)
@@ -514,12 +471,14 @@ int Atom::unpack_exchange_bf(int i, MMD_float* buf)
 
 void Atom::sort_bf()
 {
+  #pragma omp master
+  {
   if(copy_size<nmax) {
 	    destroy_2d_MMD_float_array(f_copy);
 	    f_copy = (MMD_float*) create_2d_MMD_float_array(nmax, PAD);
       copy_size = nmax;
   }
-  
+  }
   
   #pragma omp barrier
   MMD_float* new_f = f_copy;

@@ -8,15 +8,15 @@ extern int x_is_ready;
 
 extern MPI_Win win_numneigh;
 extern MPI_Win win_neighbors;
-extern MPI_Win win_x;
+//extern MPI_Win win_x;
 extern MPI_Win win_type;
 extern MPI_Win win_f;
 extern MPI_Win win_sorted_index;
 
 extern MPI_Aint f_address;
+extern MPI_Aint addresses[5];
+extern MPI_Request *s_req;
 
-
-
-//#define BF
+#define BF
 
 

@@ -85,24 +85,23 @@ void Neighbor::build(Atom &atom)
   const int nlocal = atom.nlocal;
   const int nall = atom.nlocal + atom.nghost;
   /* extend atom arrays if necessary */
-
+  int attach = 0;
+  int detach_num =0;
+  int detach_neigh =0;
   #pragma omp master
 
   if(nall > nmax) {
+    attach = 1;
     nmax = nall;
 #ifdef ALIGNMALLOC
     if(numneigh) {
       _mm_free(numneigh);
-      #ifdef BF
-        MPI_Win_detach(win_numneigh, numneigh);
-      #endif
+      detach_num = 1;
     }
     numneigh = (int*) _mm_malloc(nmax * sizeof(int) + ALIGNMALLOC, ALIGNMALLOC);
     if(neighbors) {
       _mm_free(neighbors);	
-      #ifdef BF
-        MPI_Win_detach(win_neighbors, neighbors);
-      #endif
+      detach_neigh = 1;
     }
     neighbors = (int*) _mm_malloc(nmax * maxneighs * sizeof(int) + ALIGNMALLOC, ALIGNMALLOC);
 
@@ -110,24 +109,16 @@ void Neighbor::build(Atom &atom)
 
     if(numneigh) {
       free(numneigh);
-      #ifdef BF
-        MPI_Win_detach(win_numneigh, numneigh);
-      #endif
+      detach_num = 1;
     }
     if(neighbors) {
       free(neighbors);
-      #ifdef BF
-        MPI_Win_detach(win_neighbors, neighbors);
-      #endif
+      detach_neigh = 1;
     }
     numneigh = (int*) malloc(nmax * sizeof(int));
     neighbors = (int*) malloc(nmax * maxneighs * sizeof(int));
 #endif
 //bf
-#ifdef BF
-  MPI_Win_attach(win_numneigh, numneigh, nmax * sizeof(int));
-  MPI_Win_attach(win_neighbors, neighbors, nmax * maxneighs * sizeof(int));
-#endif
 }
 
   #pragma omp barrier
@@ -220,6 +211,9 @@ void Neighbor::build(Atom &atom)
     // #pragma omp barrier
 
     if(resize) {
+      attach = 1;
+      detach_neigh = 1;
+      detach_num = 1;
       #pragma omp master
       {
         maxneighs = new_maxneighs * 1.2;
@@ -232,15 +226,10 @@ void Neighbor::build(Atom &atom)
 #endif
       }
       #pragma omp barrier
-      #ifdef BF
-        MPI_Win_detach(win_numneigh, numneigh);
-        MPI_Win_detach(win_neighbors, neighbors);
-        MPI_Win_attach(win_numneigh, numneigh, nmax * sizeof(int));
-        MPI_Win_attach(win_neighbors, neighbors, nmax * maxneighs * sizeof(int));
-      #endif
+      
     }
   }
-
+  
   #pragma omp barrier
 
 }
