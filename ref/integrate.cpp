@@ -37,10 +37,6 @@
 #include "bf_comm.h"
 #include <algorithm>
 
-void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
-void comm_atom_to_bf(Atom &atom, int n);
-void comm_force_to_host(Atom &atom);
-void comm_border_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 
 Integrate::Integrate() {sort_every=20;}
 Integrate::~Integrate() {}
@@ -289,10 +285,12 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
           if(((n + 1) % neighbor.every) == 0) {
             MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
             #pragma omp master
-            MPI_Recv(force_thermo, 2, MPI_DOUBLE, 1, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+            {
+              MPI_Recv(force_thermo, 2, MPI_DOUBLE, 1, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+              force->eng_vdwl=force_thermo[0]; 
+              force->virial=force_thermo[1];
+            }
             #pragma omp barrier
-            force->eng_vdwl=force_thermo[0]; 
-            force->virial=force_thermo[1];
           } 
           #endif
            thermo.compute(n + 1, atom, neighbor, force, timer, comm);
@@ -365,9 +363,12 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
                 
               
               if(thermo.nstat){
-                        MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+                        
                         #pragma omp master
-                        MPI_Send(force_thermo, 2, MPI_DOUBLE, 0, 0, nic_host_communicator);
+                        {
+                          MMD_float force_thermo[2]={force->eng_vdwl, force->virial};
+                          MPI_Send(force_thermo, 2, MPI_DOUBLE, 0, 0, nic_host_communicator);
+                        }
                         #pragma omp barrier
               }
               #pragma omp master

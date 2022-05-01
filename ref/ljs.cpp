@@ -50,7 +50,6 @@
 
 #include "bf_comm.h"
 
-void comm_x_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 
 #define MAXLINE 256
 
@@ -64,7 +63,6 @@ int read_lammps_data(Atom &atom, Comm &comm, Neighbor &neighbor, Integrate &inte
 
 // bf
 void bf_Comm_Init();
-void bf_win_setup(Atom &atom, Neighbor &neighbor, Comm &comm);
 void comm_neigh_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int);
 void comm_border_to_bf(Atom &atom, Neighbor &neighbor, Comm &comm, int n);
 
@@ -396,7 +394,7 @@ int main(int argc, char** argv)
   thermo.nstat = in.thermo_nstat;
 
 
-  if(me == 0)
+  if(isHost && (me == 0))
     printf("# Create System:\n");
 
   if(in.datafile) {
@@ -410,7 +408,6 @@ int main(int argc, char** argv)
     create_box(atom, in.nx, in.ny, in.nz, in.rho);
 
     comm.setup(neighbor.cutneigh, atom);
-    bf_win_setup(atom, neighbor, comm);
     neighbor.setup(atom);
 
     integrate.setup();
@@ -427,12 +424,20 @@ int main(int argc, char** argv)
   
   if(isHost && me == 0)
     printf("# Done .... \n");
-
+  int threads_on_bf=0;
+  if(!isHost){
+    MPI_Send(&neighbor.threads->omp_num_threads, 1, MPI_INT, 0, 0, nic_host_communicator);
+  }
+  else{
+    MPI_Recv(&threads_on_bf, 1, MPI_INT, 1, 0, nic_host_communicator, MPI_STATUS_IGNORE);
+             
+  }
   if(isHost && me == 0) {
     fprintf(stdout, "# " VARIANT_STRING " output ...\n");
     fprintf(stdout, "# Run Settings: \n");
     fprintf(stdout, "\t# MPI processes: %i\n", neighbor.threads->mpi_num_threads);
-    fprintf(stdout, "\t# OpenMP threads: %i\n", neighbor.threads->omp_num_threads);
+    fprintf(stdout, "\t# OpenMP threads on Host: %i\n", neighbor.threads->omp_num_threads);
+    fprintf(stdout, "\t# OpenMP threads on BF: %i\n", threads_on_bf);
     fprintf(stdout, "\t# Inputfile: %s\n", input_file == 0 ? "in.lj.miniMD" : input_file);
     fprintf(stdout, "\t# Datafile: %s\n", in.datafile ? in.datafile : "None");
     fprintf(stdout, "# Physics Settings: \n");
@@ -512,11 +517,10 @@ int main(int argc, char** argv)
       double time_other = timer.array[TIME_TOTAL] - timer.array[TIME_FORCE] - timer.array[TIME_NEIGH] - timer.array[TIME_COMM];
       printf("\n\n");
       printf("# Performance Summary:\n");
-      printf("# MPI_proc OMP_threads nsteps natoms t_total t_force t_neigh t_comm t_other performance perf/thread grep_string t_extra\n");
-      printf("%i %i %i %i %lf %lf %lf %lf %lf %lf %lf PERF_SUMMARY %lf\n\n\n",
+      printf("# MPI_proc OMP_threads nsteps natoms t_total\n");
+      printf("%i %i %i %i %lf \n\n\n",
            nprocs, num_threads, integrate.ntimes, natoms,
-           timer.array[TIME_TOTAL], timer.array[TIME_FORCE], timer.array[TIME_NEIGH], timer.array[TIME_COMM], time_other,
-           1.0 * natoms * integrate.ntimes / timer.array[TIME_TOTAL], 1.0 * natoms * integrate.ntimes / timer.array[TIME_TOTAL] / nprocs / num_threads, timer.array[TIME_TEST]);
+           timer.array[TIME_TOTAL]);
 
     }
 
@@ -526,15 +530,10 @@ int main(int argc, char** argv)
   
   delete force;
   MPI_Barrier(MPI_COMM_WORLD);
-  
+  MPI_Comm_free(&hosts_communicator);
+  MPI_Comm_free(&nic_host_communicator);
   MPI_Finalize();
   return 0;
 }
 
  
-
-        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_x);
-        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_v);
-        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_f);
-        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_type);
-        // MPI_Win_create_dynamic(MPI_INFO_NULL, nic_host_communicator, &win_sorted_index);

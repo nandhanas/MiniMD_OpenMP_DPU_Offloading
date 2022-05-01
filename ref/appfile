@@ -1,2 +1,2 @@
--np 16 --map-by node --bind-to cpu-list -hostfile hostfile /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_intel -t 1
--np 16 --map-by node --bind-to cpu-list -hostfile nicfile /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_arm -t 1
+-np 16 --map-by node --bind-to cpu-list -hostfile hostfile $miniMD_home/ref/miniMD_openmpi_intel -t 1
+-np 16 --map-by node --bind-to cpu-list -hostfile nicfile $miniMD_home/ref/miniMD_openmpi_arm -t 1

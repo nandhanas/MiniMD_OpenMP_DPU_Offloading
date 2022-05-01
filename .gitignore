@@ -3,3 +3,8 @@ ref/miniMD_openmpi_arm
 ref/miniMD_openmpi_intel
 ref/Obj_openmpi_arm
 ref/Obj_openmpi_intel
+ref/results_multicore_offpath_miniMD1.tar.gz
+ref/results_multicore_offpath_miniMD.tar.gz
+ref/data_multicore_openMP_offpath_miniMD
+ref/data_multicore_offpath
+ref/data_1core_offpath_22.2.16

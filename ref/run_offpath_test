@@ -1,14 +1,12 @@
-for size in 10 16 20 30 40 60
+nt_host=32
+nt_bf=8
+for size in 30
 do
-    for np in 2 4 8 16
+    for np in 8
     do
-        for nt_host in 1
-        do
-	     for nt_bf in 1 
-             do
-                  echo "${size} ${np} ${nt_host} ${nt_bf}"
-                  OMP_PLACES=cores OMP_PROC_BIND=spread mpirun -np ${np} -hostfile hostfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_intel -t ${nt_host} -s ${size} : -np ${np} -hostfile nicfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_arm -t ${nt_bf} -s ${size} > data_multicore_offpath/miniMD_${size}_10_1000_${np}_${nt_host}_${nt_bf}.txt
-              done
-         done
+        OMP_PLACES=cores OMP_PROC_BIND=spread mpirun -np ${np} -hostfile hostfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_x86_64 -t ${nt_host} -s ${size} : -np ${np} -hostfile nicfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_aarch64 -t ${nt_bf} -s ${size}
+        #OMP_PLACES=cores OMP_PROC_BIND=spread mpirun -np ${np} -hostfile hostfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_intel -t ${nt_host} -s ${size} : -np ${np} -hostfile nicfile -bind-to cpu-list -map-by node /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_arm -t ${nt_bf} -s ${size} > data_multicore_offpath/miniMD_${size}_1_1000_${np}_${nt_host}_${nt_bf}.txt
+        #mpirun -np ${np} -npernode 1 -hostfile hostfile  /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_intel -s ${size} : -np ${np} -npernode 1 -hostfile nicfile  /global/home/users/skaramati/snic/miniMD/miniMD_bf_openMP/miniMD/ref/miniMD_openmpi_arm -s ${size} > data_1core_offpath_22.2.16/miniMD_${size}_2_1000_${np}_offpath.txt
+              
     done
 done
