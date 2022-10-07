@@ -300,6 +300,17 @@ void Comm::communicate(Atom &atom)
        if self, set recv buffer to send buffer */
 
     if(sendproc[iswap] != me) {
+      if(me is inside host) // need to create a flag for process according to their host
+      {
+        #pragma omp target device (dpu) map(to: buf_send[:comm_send_size[iswap]])
+        #pragma omp parallel for simd
+              for(int i = 0; i < comm_recv_size[iswap]; ++i)
+	      {
+	            buf_recv[i] = buf_send[i];
+              }		    
+      }
+      #pragma omp barrier
+
       #pragma omp master
       {
         MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
@@ -337,6 +348,17 @@ void Comm::reverse_communicate(Atom &atom)
        if self, set recv buffer to send buffer */
 
     if(sendproc[iswap] != me) {
+      
+      if(me is inside host) // need to create a flag for process according to their host
+      { 
+        #pragma omp target device (dpu) map(to: buf_send[:reverse_send_size[iswap]])
+        #pragma omp parallel for simd
+              for(int i = 0; i < reverse_recv_size[iswap]; ++i)
+              {     
+                    buf_recv[i] = buf_send[i];
+              }
+      }
+      #pragma omp barrier
 
       #pragma omp master
       {
@@ -406,8 +428,8 @@ void Comm::exchange(Atom &atom)
 
     nlocal = atom.nlocal;
 
-    #pragma omp master
-    {
+//    #pragma omp master
+  //  {
       if(nlocal > maxnlocal) {
         send_flag = new int[nlocal];
         maxnlocal = nlocal;
@@ -426,7 +448,7 @@ void Comm::exchange(Atom &atom)
           exc_sendlist_thread[i] = (int*) malloc(maxsend * sizeof(int));
         }
       }
-    }
+   // }
 
     #pragma omp barrier
 
@@ -456,8 +478,8 @@ void Comm::exchange(Atom &atom)
     
     #pragma omp barrier
 
-    #pragma omp master
-    {
+  //  #pragma omp master
+   // {
       int total_nsend = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
@@ -466,7 +488,7 @@ void Comm::exchange(Atom &atom)
       }
 
       if(total_nsend * 7 > maxsend) growsend(total_nsend * 7);
-    }
+  //  }
 
     #pragma omp barrier
 
@@ -480,15 +502,15 @@ void Comm::exchange(Atom &atom)
     nholes_thread[tid] = nholes;
     #pragma omp barrier
     
-    #pragma omp master
-    {
+   // #pragma omp master
+   // {
       int total_nholes = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
         total_nholes += nholes_thread[i];
         nholes_thread[i] = total_nholes;
       }
-    }
+  //  }
     #pragma omp barrier
 
     int j = nlocal;
@@ -514,37 +536,89 @@ void Comm::exchange(Atom &atom)
     
     nsend *= 7;
     #pragma omp barrier
-    #pragma omp master
-    {
+  //  #pragma omp master
+  //  {
       atom.nlocal = nlocal - total_nsend;
       nsend = total_nsend * 7;
 
       /* send/recv atoms in both directions
          only if neighboring procs are different */
 
-      MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][0], 0,
+      if(me is inside host) // need to create a flag for process according to their host
+      {
+      		#pragma omp target device (dpu) map(to: nsend)
+        	#pragma omp parallel for simd
+               	    nrecv1 = nsend;
+      }
+      #pragma omp barrier
+
+      #pragma omp master
+      {
+      	MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][0], 0,
                    &nrecv1, 1, MPI_INT, procneigh[idim][1], 0,
                    hosts_communicator, MPI_STATUS_IGNORE);
-      nrecv = nrecv1;
+      	nrecv = nrecv1;
+      }
 
       if(procgrid[idim] > 2) {
-        MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][1], 0,
-                     &nrecv2, 1, MPI_INT, procneigh[idim][0], 0,
-                     hosts_communicator, MPI_STATUS_IGNORE);
-        nrecv += nrecv2;
+
+	if(me is inside host) // need to create a flag for process according to their host
+	 {
+        	#pragma omp target device (dpu) map(to: nsend)
+        	#pragma omp parallel for simd
+                    nrecv2 = nsend;
+      	}
+        #pragma omp barrier
+
+	#pragma omp master
+	{
+        	MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][1], 0,
+                	     &nrecv2, 1, MPI_INT, procneigh[idim][0], 0,
+                     	     hosts_communicator, MPI_STATUS_IGNORE);
+        	nrecv += nrecv2;
+        }
       }
 
       if(nrecv > maxrecv) growrecv(nrecv);
 
-      MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
-      MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][0], 0,
-                   buf_recv, nrecv1, type, procneigh[idim][1], 0,
-                   hosts_communicator, MPI_STATUS_IGNORE);
+      if(me is inside host) // need to create a flag for process according to their host
+         {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+                for(int i = 0; i < nrecv1; ++i)
+                {
+                        buf_recv[i] = buf_send[i];
+                }
+        }
+      #pragma omp barrier
+
+      #pragma omp master
+      {
+      		MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+      		MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][0], 0,
+                	   buf_recv, nrecv1, type, procneigh[idim][1], 0,
+                   	   hosts_communicator, MPI_STATUS_IGNORE);
+      }
 
       if(procgrid[idim] > 2) {
-        MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][1], 0,
-                     buf_recv+nrecv1, nrecv2, type, procneigh[idim][0], 0,
-                     hosts_communicator, MPI_STATUS_IGNORE);
+
+	if(me is inside host) // need to create a flag for process according to their host
+         {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+                for(int i = 0; i < nrecv2; ++i)
+                {
+                        buf_recv+nrecv1[i] = buf_send[i];
+                }
+        }
+        #pragma omp barrier
+
+	#pragma omp master
+	{
+        	MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][1], 0,
+                	     buf_recv+nrecv1, nrecv2, type, procneigh[idim][0], 0,
+                    	     hosts_communicator, MPI_STATUS_IGNORE);
+	}
       }
 
       nrecv_atoms = nrecv / 7;
@@ -552,7 +626,7 @@ void Comm::exchange(Atom &atom)
       for(int i = 0; i < threads->omp_num_threads; i++)
         nrecv_thread[i] = 0;
 
-    }
+   // }
     
     /* check incoming atoms to see if they are in my box
        if they are, add to my list */
@@ -573,8 +647,8 @@ void Comm::exchange(Atom &atom)
     nlocal = atom.nlocal;
     #pragma omp barrier
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       int total_nrecv = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
@@ -583,7 +657,7 @@ void Comm::exchange(Atom &atom)
       }
 
       atom.nlocal += total_nrecv;
-    }
+    //}
     #pragma omp barrier
 
     int copyinpos = nlocal + nrecv_thread[tid] - nrecv;
@@ -659,6 +733,15 @@ void Comm::exchange_all(Atom &atom)
     *        only if neighboring procs are different */
     for(int ineed = 0; ineed < 2 * need[idim]; ineed += 1) {
       if(ineed < procgrid[idim] - 1) {
+
+	if(me is inside host) // need to create a flag for process according to their host
+        {
+                #pragma omp target device (dpu) map(to: nsend)
+                #pragma omp parallel for simd
+                       nrecv = nsend;
+        }
+        #pragma omp barrier
+
         MPI_Sendrecv(&nsend, 1, MPI_INT, sendproc_exc[iswap], 0,
                      &nrecv, 1, MPI_INT, recvproc_exc[iswap], 0,
                      hosts_communicator, MPI_STATUS_IGNORE);
@@ -666,6 +749,18 @@ void Comm::exchange_all(Atom &atom)
         if(nrecv > maxrecv) growrecv(nrecv);
 
         MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+
+	if(me is inside host) // need to create a flag for process according to their host
+         {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+		  for(int i = 0, i < nrecv; ++i)
+                  {
+                       buf_recv[i] = buf_send[i];
+		  }
+        }
+        #pragma omp barrier
+
         MPI_Sendrecv(buf_send, nsend, type, sendproc_exc[iswap], 0,
                      buf_recv, nrecv, type, recvproc_exc[iswap], 0,
                      hosts_communicator, MPI_STATUS_IGNORE);
@@ -719,8 +814,8 @@ void Comm::borders(Atom &atom)
 
   int tid = omp_get_thread_num();
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       if(atom.nlocal > maxnlocal) {
         send_flag = new int[atom.nlocal];
         maxnlocal = atom.nlocal;
@@ -739,7 +834,7 @@ void Comm::borders(Atom &atom)
           exc_sendlist_thread[i] = (int*) malloc(maxsend * sizeof(int));
         }
       }
-    }
+   // }
 
   for(idim = 0; idim < 3; idim++) {
     nlast = 0;
@@ -792,8 +887,8 @@ void Comm::borders(Atom &atom)
 
       #pragma omp barrier
 
-      #pragma omp master
-      {
+     // #pragma omp master
+     // {
         int total_nsend = 0;
 
         for(int i = 0; i < threads->omp_num_threads; i++) {
@@ -804,7 +899,7 @@ void Comm::borders(Atom &atom)
         if(total_nsend > maxsendlist[iswap]) growlist(iswap, total_nsend);
 
         if(total_nsend * 4 > maxsend) growsend(total_nsend * 4);
-      }
+     // }
       #pragma omp barrier
 
       for(int k = 0; k < nsend; k++) {
@@ -819,21 +914,47 @@ void Comm::borders(Atom &atom)
       put incoming ghosts at end of my atom arrays
       if swapping with self, simply copy, no messages */
 
-      #pragma omp master
-      {
+      //#pragma omp master
+      //{
         nsend = nsend_thread[threads->omp_num_threads - 1];
 
         if(sendproc[iswap] != me) {
-          MPI_Sendrecv(&nsend, 1, MPI_INT, sendproc[iswap], 0,
-                       &nrecv, 1, MPI_INT, recvproc[iswap], 0,
-                       hosts_communicator, MPI_STATUS_IGNORE);
+         
+	   if(me is inside host) // need to create a flag for process according to their host
+           {
+                #pragma omp target device (dpu) map(to: nsend)
+                #pragma omp parallel for simd
+                       nrecv = nsend;
+		#pragma omp barrier
+	   }
 
-          if(nrecv * atom.border_size > maxrecv) growrecv(nrecv * atom.border_size);
+	   #pragma omp master
+           {
+          	MPI_Sendrecv(&nsend, 1, MPI_INT, sendproc[iswap], 0,
+                	       &nrecv, 1, MPI_INT, recvproc[iswap], 0,
+                       	       hosts_communicator, MPI_STATUS_IGNORE);
+           }
 
-          MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
-          MPI_Sendrecv(buf_send, nsend * atom.border_size, type, sendproc[iswap], 0,
-                       buf_recv, nrecv * atom.border_size, type, recvproc[iswap], 0,
-                       hosts_communicator, MPI_STATUS_IGNORE);
+           if(nrecv * atom.border_size > maxrecv) growrecv(nrecv * atom.border_size);
+           
+	   if(me is inside host) // need to create a flag for process according to their host
+           {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+                  for(int i = 0, i < nrecv; ++i)
+                  {
+                       buf_recv[i] = buf_send[i];
+                  }
+                #pragma omp barrier
+
+	   }
+           #pragma omp master
+	   { 
+          	MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+          	MPI_Sendrecv(buf_send, nsend * atom.border_size, type, sendproc[iswap], 0,
+                 	      buf_recv, nrecv * atom.border_size, type, recvproc[iswap], 0,
+                       	      hosts_communicator, MPI_STATUS_IGNORE);
+	   }
           buf = buf_recv;
         } else {
           nrecv = nsend;
@@ -841,7 +962,7 @@ void Comm::borders(Atom &atom)
         }
 
         nrecv_atoms = nrecv;
-      }
+      //}
       /* unpack buffer */
 
       #pragma omp barrier
@@ -856,8 +977,8 @@ void Comm::borders(Atom &atom)
 
       /* set all pointers & counters */
 
-      #pragma omp master
-      {
+      //#pragma omp master
+      //{
         sendnum[iswap] = nsend;
         recvnum[iswap] = nrecv;
         comm_send_size[iswap] = nsend * atom.comm_size;
@@ -866,7 +987,7 @@ void Comm::borders(Atom &atom)
         reverse_recv_size[iswap] = nsend * atom.reverse_size;
         firstrecv[iswap] = atom.nlocal + atom.nghost;
         atom.nghost += nrecv;
-      }
+      //}
       #pragma omp barrier
       iswap++;
     }
@@ -957,8 +1078,8 @@ void Comm::exchange_bf(Atom &atom)
 
     nlocal = atom.nlocal;
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       if(nlocal > maxnlocal) {
         send_flag = new int[nlocal];
         maxnlocal = nlocal;
@@ -977,7 +1098,7 @@ void Comm::exchange_bf(Atom &atom)
           exc_sendlist_thread[i] = (int*) malloc(maxsend * sizeof(int));
         }
       }
-    }
+    //}
 
     #pragma omp barrier
 
@@ -1007,8 +1128,8 @@ void Comm::exchange_bf(Atom &atom)
     
     #pragma omp barrier
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       int total_nsend = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
@@ -1017,7 +1138,7 @@ void Comm::exchange_bf(Atom &atom)
       }
 
       if(total_nsend * 6 > maxsend) growsend(total_nsend * 6);
-    }
+    //}
 
     #pragma omp barrier
 
@@ -1031,15 +1152,15 @@ void Comm::exchange_bf(Atom &atom)
     nholes_thread[tid] = nholes;
     #pragma omp barrier
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       int total_nholes = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
         total_nholes += nholes_thread[i];
         nholes_thread[i] = total_nholes;
       }
-    }
+    //}
     #pragma omp barrier
 
     int j = nlocal;
@@ -1065,37 +1186,96 @@ void Comm::exchange_bf(Atom &atom)
 
     nsend *= 6;
     #pragma omp barrier
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       atom.nlocal = nlocal - total_nsend;
       nsend = total_nsend * 6;
 
       /* send/recv atoms in both directions
          only if neighboring procs are different */
 
-      MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][0], 0,
-                   &nrecv1, 1, MPI_INT, procneigh[idim][1], 0,
-                   hosts_communicator, MPI_STATUS_IGNORE);
+      if(me is inside host) // need to create a flag for process according to their host
+      {
+                #pragma omp target device (dpu) map(to: nsend)
+                #pragma omp parallel for simd
+                       nrecv1 = nsend;
+                #pragma omp barrier
+
+      }
+
+      #pragma omp master
+      {
+      		MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][0], 0,
+                   	&nrecv1, 1, MPI_INT, procneigh[idim][1], 0,
+                   	hosts_communicator, MPI_STATUS_IGNORE);
+      }
       nrecv = nrecv1;
 
       if(procgrid[idim] > 2) {
-        MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][1], 0,
-                     &nrecv2, 1, MPI_INT, procneigh[idim][0], 0,
-                     hosts_communicator, MPI_STATUS_IGNORE);
+
+	if(me is inside host) // need to create a flag for process according to their host
+        {         
+                #pragma omp target device (dpu) map(to: nsend)
+                #pragma omp parallel for simd
+                       nrecv2 = nsend;
+                #pragma omp barrier
+
+        }
+
+
+	#pragma omp master
+	{
+        	MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][1], 0,
+                	     &nrecv2, 1, MPI_INT, procneigh[idim][0], 0,
+                     	     hosts_communicator, MPI_STATUS_IGNORE);
+        }
         nrecv += nrecv2;
       }
 
       if(nrecv > maxrecv) growrecv(nrecv);
 
       MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
-      MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][0], 0,
-                   buf_recv, nrecv1, type, procneigh[idim][1], 0,
-                   hosts_communicator, MPI_STATUS_IGNORE);
+
+      if(me is inside host) // need to create a flag for process according to their host
+      {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+                  for(int i = 0, i < nrecv1; ++i)
+                  {
+                       buf_recv[i] = buf_send[i];
+                  }
+                #pragma omp barrier
+
+      }
+
+      #pragma omp master
+      {
+      		MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][0], 0,
+                	   buf_recv, nrecv1, type, procneigh[idim][1], 0,
+                   	   hosts_communicator, MPI_STATUS_IGNORE);
+      }
 
       if(procgrid[idim] > 2) {
-        MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][1], 0,
-                     buf_recv+nrecv1, nrecv2, type, procneigh[idim][0], 0,
-                     hosts_communicator, MPI_STATUS_IGNORE);
+
+	if(me is inside host) // need to create a flag for process according to their host
+        {
+                #pragma omp target device (dpu) map(to: buf_send[:nsend])
+                #pragma omp parallel for simd
+                  for(int i = 0, i < nrecv2; ++i)
+                  {
+                       buf_recv+nrecv1[i] = buf_send[i];
+                  }
+                #pragma omp barrier
+
+        }
+      
+	
+	#pragma omp master
+	{
+        	MPI_Sendrecv(buf_send, nsend, type, procneigh[idim][1], 0,
+                	     buf_recv+nrecv1, nrecv2, type, procneigh[idim][0], 0,
+                     	     hosts_communicator, MPI_STATUS_IGNORE);
+	}
       }
 
       nrecv_atoms = nrecv / 6;
@@ -1103,7 +1283,7 @@ void Comm::exchange_bf(Atom &atom)
       for(int i = 0; i < threads->omp_num_threads; i++)
         nrecv_thread[i] = 0;
 
-    }
+    //}
     /* check incoming atoms to see if they are in my box
        if they are, add to my list */
 
@@ -1123,8 +1303,8 @@ void Comm::exchange_bf(Atom &atom)
     nlocal = atom.nlocal;
     #pragma omp barrier
 
-    #pragma omp master
-    {
+    //#pragma omp master
+    //{
       int total_nrecv = 0;
 
       for(int i = 0; i < threads->omp_num_threads; i++) {
@@ -1133,7 +1313,7 @@ void Comm::exchange_bf(Atom &atom)
       }
 
       atom.nlocal += total_nrecv;
-    }
+    //}
     #pragma omp barrier
 
     int copyinpos = nlocal + nrecv_thread[tid] - nrecv;
